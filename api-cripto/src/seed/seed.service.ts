@@ -3,6 +3,7 @@ import { CreateCryptoCurrencyDto } from 'src/crypto-currency/dto/create-crypto-c
 import { AxiosAdapter } from '../common/adapters/axios.adapter';
 import { CryptoCurrencyService } from '../crypto-currency/crypto-currency.service';
 import { type CryptoResponse } from './interfaces/crypto.response';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class SeedService {
@@ -16,27 +17,28 @@ export class SeedService {
     const data = await this.http.get<CryptoResponse[]>(
       'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1',
     );
-    const newData = data.map((crypto) => {
-      const a = new CreateCryptoCurrencyDto();
-      a.name = crypto.name;
-      a.image = crypto.image;
-      a.currentPrice = crypto.current_price;
-      a.high24h = crypto.high_24h;
-      a.low24h = crypto.low_24h;
-      a.high1h = crypto.high_24h;
-      a.low1h = crypto.low_24h;
-      a.signal = 'B';
-      return a;
+    const cryptoToCreate = data.map((crypto) => {
+      const newCrypto = new CreateCryptoCurrencyDto();
+      newCrypto.name = crypto.name;
+      newCrypto.image = crypto.image;
+      newCrypto.symbol = crypto.symbol;
+      newCrypto.currentPrice = crypto.current_price;
+      newCrypto.high24h = crypto.high_24h;
+      newCrypto.low24h = crypto.low_24h;
+      newCrypto.high1h = crypto.high_24h;
+      newCrypto.low1h = crypto.low_24h;
+      newCrypto.signal = 'B';
+      return newCrypto;
     });
-    await this.cryptoCurrencyService.createMany(newData);
-    // console.log(JSON.stringify(data, null, 2));
+    await this.cryptoCurrencyService.createMany(cryptoToCreate);
 
     return 'Seed executed';
   }
 
-  // @Cron('*/5 * * * * *')
-  // handleCron() {
-  //   this.logger.debug('Cada 5 segundos');
-  //   // this.executeSeed();
-  // }
+  // @Cron('*/2 * * * * *') // 2 seconds
+  @Cron('45 * * * * *')
+  async handleCron() {
+    console.log('Running seed every 5 seconds');
+    await this.executeSeed();
+  }
 }

@@ -28,6 +28,7 @@ model CryptoCurrency {
   updatedAt DateTime @updatedAt
   name      String   @db.VarChar(50)
   image     String
+  symbol    String
   currentPrice  Float
   high24h  Float
   low24h  Float

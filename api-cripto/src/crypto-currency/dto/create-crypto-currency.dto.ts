@@ -10,6 +10,10 @@ export class CreateCryptoCurrencyDto {
   image: string;
 
   @IsNotEmpty()
+  @IsString()
+  symbol: string;
+
+  @IsNotEmpty()
   @IsNumber()
   currentPrice: number;
 
