@@ -6,9 +6,11 @@ export interface CryptoCurrency {
   image: string
   symbol: string
   currentPrice: number
-  high24h: number
-  low24h: number
   high1h: number
   low1h: number
+  avg: number
   signal: string
+  trend: string
+  isCurrent: boolean
+  tag: string
 }

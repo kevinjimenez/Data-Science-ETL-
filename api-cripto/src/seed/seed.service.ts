@@ -12,33 +12,55 @@ export class SeedService {
     private readonly cryptoCurrencyService: CryptoCurrencyService,
   ) {}
   public async executeSeed() {
-    await this.cryptoCurrencyService.deleteAll();
+    const cryptosToCreate: CreateCryptoCurrencyDto[] = [];
+    await this.cryptoCurrencyService.moveToHistory();
 
     const data = await this.http.get<CryptoResponse[]>(
-      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1',
+      process.env.COIN_API ?? '',
     );
-    const cryptoToCreate = data.map((crypto) => {
+
+    for (const crypto of data) {
+      const lastCrypto = await this.cryptoCurrencyService.getLastCryptoCurrency(
+        crypto.id,
+      );
+
       const newCrypto = new CreateCryptoCurrencyDto();
+      newCrypto.trend = lastCrypto?.trend ?? 'same';
+      newCrypto.high1h = lastCrypto?.high1h ?? crypto.current_price;
+      newCrypto.low1h = lastCrypto?.low1h ?? crypto.current_price;
+
+      if (lastCrypto && crypto.current_price === lastCrypto.currentPrice) {
+        newCrypto.trend = 'same';
+      } else if (lastCrypto && crypto.current_price > lastCrypto.currentPrice) {
+        newCrypto.trend = 'up';
+        newCrypto.high1h = crypto.current_price;
+      } else if (lastCrypto && crypto.current_price < lastCrypto.currentPrice) {
+        newCrypto.trend = 'down';
+        newCrypto.low1h = crypto.current_price;
+      }
+
       newCrypto.name = crypto.name;
       newCrypto.image = crypto.image;
       newCrypto.symbol = crypto.symbol;
       newCrypto.currentPrice = crypto.current_price;
-      newCrypto.high24h = crypto.high_24h;
-      newCrypto.low24h = crypto.low_24h;
-      newCrypto.high1h = crypto.high_24h;
-      newCrypto.low1h = crypto.low_24h;
-      newCrypto.signal = 'B';
-      return newCrypto;
-    });
-    await this.cryptoCurrencyService.createMany(cryptoToCreate);
+
+      const avg = (newCrypto.high1h + newCrypto.low1h) / 2;
+      newCrypto.avg = avg;
+
+      newCrypto.signal = crypto.current_price > avg ? 'B' : 'S';
+      newCrypto.tag = crypto.id;
+      newCrypto.isCurrent = true;
+      cryptosToCreate.push(newCrypto);
+    }
+
+    await this.cryptoCurrencyService.createMany(cryptosToCreate);
 
     return 'Seed executed';
   }
 
-  // @Cron('*/2 * * * * *') // 2 seconds
-  @Cron('45 * * * * *')
+  @Cron('0 * * * * *')
   async handleCron() {
-    console.log('Running seed every 5 seconds');
+    console.log('Running seed');
     await this.executeSeed();
   }
 }

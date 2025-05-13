@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CryptoCurrencyRepository } from './crypto-currency.repository';
 import { CreateCryptoCurrencyDto } from './dto/create-crypto-currency.dto';
+import { Filters } from '../common/interfaces/filters.interface';
 
 @Injectable()
 export class CryptoCurrencyService {
@@ -18,8 +19,16 @@ export class CryptoCurrencyService {
     }
   }
 
-  findAll() {
-    return this.cryptoCurrencyRepository.getCryptoCurrencies();
+  public getLastCryptoCurrency(tag: string) {
+    return this.cryptoCurrencyRepository.getLastCryptoCurrency(tag);
+  }
+
+  public findAll(page?: number, filters?: Filters) {
+    return this.cryptoCurrencyRepository.getCryptoCurrencies(page, filters);
+  }
+
+  public moveToHistory() {
+    return this.cryptoCurrencyRepository.moveToHistory();
   }
 
   public async deleteAll() {

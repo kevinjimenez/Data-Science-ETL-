@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreateCryptoCurrencyDto {
   @IsNotEmpty()
@@ -19,14 +19,6 @@ export class CreateCryptoCurrencyDto {
 
   @IsNotEmpty()
   @IsNumber()
-  high24h: number;
-
-  @IsNotEmpty()
-  @IsNumber()
-  low24h: number;
-
-  @IsNotEmpty()
-  @IsNumber()
   high1h: number;
 
   @IsNotEmpty()
@@ -34,6 +26,22 @@ export class CreateCryptoCurrencyDto {
   low1h: number;
 
   @IsNotEmpty()
+  @IsNumber()
+  avg: number;
+
+  @IsNotEmpty()
   @IsString()
   signal: string;
+
+  @IsNotEmpty()
+  @IsString()
+  trend: string;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  isCurrent: boolean;
+
+  @IsNotEmpty()
+  @IsString()
+  tag: string;
 }

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CryptoCurrency, Prisma } from '@prisma/client';
+import { Filters } from 'src/common/interfaces/filters.interface';
 import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
@@ -18,28 +19,50 @@ export class CryptoCurrencyRepository {
     return this.databaseService.cryptoCurrency.createMany({ data: payload });
   }
 
-  public updateById(
-    id: string,
-    payload: Prisma.CryptoCurrencyCreateInput,
-  ): Promise<CryptoCurrency> {
-    return this.databaseService.cryptoCurrency.update({
-      where: { id },
-      data: payload,
+  public moveToHistory() {
+    return this.databaseService.cryptoCurrency.updateMany({
+      data: { isCurrent: false },
     });
   }
 
-  public updateManyById(data: Prisma.CryptoCurrencyCreateInput[]) {
-    const operations = data.map((item) => {
-      if (!item.id) return this.createCryptoCurrency(item);
-      return this.updateById(item.id, item);
+  public getLastCryptoCurrency(tag: string) {
+    return this.databaseService.cryptoCurrency.findFirst({
+      where: { tag },
+      orderBy: { createdAt: 'desc' },
     });
-    console.log(operations);
-
-    return 'all updated';
   }
 
-  public getCryptoCurrencies(): Promise<CryptoCurrency[]> {
-    return this.databaseService.cryptoCurrency.findMany({});
+  public getCryptoCurrencies(
+    page: number = 1,
+    filters?: Filters,
+  ): Promise<CryptoCurrency[]> {
+    const limit = 5;
+    const skip = (page - 1) * limit;
+
+    return this.databaseService.cryptoCurrency.findMany({
+      where: {
+        isCurrent: true,
+        ...(filters?.name && {
+          name: {
+            contains: filters.name,
+            mode: 'insensitive',
+          },
+        }),
+        ...(filters?.trend && {
+          trend: {
+            equals: filters.trend,
+          },
+        }),
+        ...(filters?.signal && {
+          signal: {
+            equals: filters.signal,
+          },
+        }),
+      },
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   public async deleteAll() {
