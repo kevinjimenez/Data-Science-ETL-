@@ -24,7 +24,7 @@
 
       <!-- Título del componente -->
       <h1 class="text-center text-lg md:text-xl font-bold text-gray-800 mt-6">
-        Diseño de proceso ETL en Data Science - Componente práctico uno
+        Diseño de proceso ETL en Data Science - Componente práctico tres
       </h1>
     </header>
 
