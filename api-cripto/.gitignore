@@ -13,7 +13,7 @@ yarn-error.log*
 lerna-debug.log*
 
 .env
-./postgres
+./postgres/
 
 # OS
 .DS_Store

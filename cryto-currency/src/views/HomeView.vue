@@ -43,8 +43,6 @@
       </fieldset>
     </section>
 
-    {{ values }}
-
     <div v-if="!cryptosCurrency">
       <TableSkeleton />
     </div>
@@ -180,29 +178,33 @@ import CustomHeader from '@/components/CustomHeader.vue'
 import CustomModal from '@/components/CustomModal.vue'
 import TableSkeleton from '@/components/TableSkeleton.vue'
 import { useCryptoCurrencies } from '@/composables/useCryptoCurrencies'
+import { useQueryParams } from '@/helpers/useBuildQueryParams'
 import { useCurrencyFormatter } from '@/helpers/useCurrencyFormatter'
 import type { CryptoCurrency } from '@/interfaces/crypto-currency.interface'
 import type { FiltersForm } from '@/interfaces/filters-form.interface'
+import { debounce } from 'lodash-es'
 import { useForm } from 'vee-validate'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { debounce } from 'lodash-es'
 
-// composables self vue 3
+// composables self vue 3 and composables without args
 const route = useRoute()
 const router = useRouter()
+const { formatCurrency } = useCurrencyFormatter()
+const { buildQueryParams } = useQueryParams()
 
-// variables
+// variables not depend on composables
 const page = ref(Number(route.query.page) || 1)
 const isOpen = ref('')
+const initialValuesFilters = ref({
+  name: route.query.name?.toString() ?? '',
+  signal: route.query.signal?.toString() || '',
+  trend: route.query.trend?.toString() || '',
+})
 
-// composables
+// composables with args and variables depend on composables
 const { values, defineField } = useForm<FiltersForm>({
-  initialValues: {
-    name: route.query.name?.toString() || '',
-    signal: route.query.signal?.toString() || '',
-    trend: route.query.trend?.toString() || '',
-  },
+  initialValues: initialValuesFilters.value,
 })
 
 const nameDebounced = ref(values.name)
@@ -211,13 +213,12 @@ const filters = computed(() => ({
   name: nameDebounced.value,
 }))
 
-const { formatCurrency } = useCurrencyFormatter()
 const { cryptosCurrency } = useCryptoCurrencies(page, filters)
-
 const [name, nameAttrs] = defineField('name')
 const [signal, signalAttrs] = defineField('signal')
 const [trend, trendAttrs] = defineField('trend')
 
+// methods
 const modalOpen = (crypto: CryptoCurrency) => {
   isOpen.value = crypto.id
 }
@@ -225,21 +226,15 @@ const modalOpen = (crypto: CryptoCurrency) => {
 const backPage = () => {
   if (page.value === 1) return
   page.value--
-  router.push({
-    query: {
-      page: page.value,
-      name: values.name,
-      signal: values.signal,
-      trend: values.trend,
-    },
-  })
+  const queryParams = buildQueryParams(page.value, values)
+  router.push(queryParams)
 }
 
 const nextPage = () => {
   page.value++
-  router.push({
-    query: { page: page.value, name: values.name, signal: values.signal, trend: values.trend },
-  })
+  const queryParams = buildQueryParams(page.value, values)
+
+  router.push(queryParams)
 }
 
 // watchers
@@ -252,14 +247,8 @@ watch(
 )
 
 watch(values, (newValues) => {
-  router.push({
-    query: {
-      page: page.value,
-      name: newValues.name,
-      signal: newValues.signal,
-      trend: newValues.trend,
-    },
-  })
+  const queryParams = buildQueryParams(page.value, newValues)
+  router.push(queryParams)
 })
 
 watch(
