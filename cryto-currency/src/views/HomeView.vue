@@ -1,32 +1,6 @@
 <template>
   <section class="flex flex-col h-screen">
-    <!-- <section class="w-full flex justify-center bg-red-900">
-      <h1 class="text-2xl font-normal text-center my-4 text-white">
-        Diseño de proceso ETL en Data Science - Componente practico uno
-      </h1>
-    </section> -->
-
-    <header class="bg-white shadow-md border-b border-gray-200 py-4 px-6">
-      <div class="flex flex-col md:flex-row justify-between items-center">
-        <!-- Logo -->
-        <div class="flex items-center space-x-4 mb-4 md:mb-0">
-          <img src="@/assets/uide.jpg" alt="UIDE Logo" class="h-12" />
-          <div class="text-sm text-gray-600">Powered by Arizona State University®</div>
-        </div>
-
-        <!-- Grupo -->
-        <div class="text-right text-sm text-gray-800">
-          <p class="font-semibold">Grupo número 4</p>
-          <p>Fernando Siguenza, Kevin Jimenez</p>
-          <p>Maria Jose Chavez, Yessenia Carrillo</p>
-        </div>
-      </div>
-
-      <!-- Título del componente -->
-      <h1 class="text-center text-lg md:text-xl font-bold text-gray-800 mt-6">
-        Diseño de proceso ETL en Data Science - Componente práctico tres
-      </h1>
-    </header>
+    <CustomHeader />
 
     <h2
       class="text-2xl md:text-3xl font-extrabold text-center text-slate-500 mt-8 mb-4 tracking-tight"
@@ -37,14 +11,20 @@
     <section class="flex gap-x-4 mx-4 my-3">
       <fieldset class="fieldset">
         <legend class="fieldset-legend text-slate-500">Nombre</legend>
-        <input type="text" class="input" placeholder="Ej: Bitcoin" v-model="name" />
+        <input
+          type="text"
+          class="input"
+          placeholder="Ej: Bitcoin"
+          v-model="name"
+          v-bind="nameAttrs"
+        />
         <p class="label text-slate-500">Buscar por nombre</p>
       </fieldset>
 
       <fieldset class="fieldset">
         <legend class="fieldset-legend text-slate-500">Señal</legend>
-        <select class="select" v-model="signal">
-          <option value="" selected>--Seleccione una opción--</option>
+        <select class="select" v-model="signal" v-bind="signalAttrs">
+          <option value="" selected>Todos</option>
           <option value="B">Buy (B)</option>
           <option value="S">Sell (S)</option>
         </select>
@@ -53,8 +33,8 @@
 
       <fieldset class="fieldset">
         <legend class="fieldset-legend text-slate-500">Trend</legend>
-        <select class="select" v-model="trend">
-          <option value="" selected>--Seleccione una opción--</option>
+        <select class="select" v-model="trend" v-bind="trendAttrs">
+          <option value="" selected>Todos</option>
           <option value="same">Same</option>
           <option value="up">Up</option>
           <option value="down">Down</option>
@@ -63,7 +43,9 @@
       </fieldset>
     </section>
 
-    <div v-if="isLoading">
+    {{ values }}
+
+    <div v-if="!cryptosCurrency">
       <TableSkeleton />
     </div>
 
@@ -94,6 +76,9 @@
               </th>
               <th class="p-4 border-b border-slate-200 bg-slate-50">
                 <p class="text-sm font-normal leading-none text-slate-500">Signal</p>
+              </th>
+              <th class="p-4 border-b border-slate-200 bg-slate-50">
+                <p class="text-sm font-normal leading-none text-slate-500">Acciones</p>
               </th>
             </tr>
           </thead>
@@ -159,6 +144,11 @@
                   {{ crypto.signal }}
                 </p>
               </td>
+
+              <td class="flex items-center justify-center py-5">
+                <button class="btn" @click="modalOpen(crypto)">Grafico</button>
+                <CustomModal :open="isOpen === crypto.id" @close="isOpen = ''" :crypto="crypto" />
+              </td>
             </tr>
           </tbody>
         </table>
@@ -186,41 +176,94 @@
   </section>
 </template>
 <script setup lang="ts">
+import CustomHeader from '@/components/CustomHeader.vue'
+import CustomModal from '@/components/CustomModal.vue'
 import TableSkeleton from '@/components/TableSkeleton.vue'
 import { useCryptoCurrencies } from '@/composables/useCryptoCurrencies'
 import { useCurrencyFormatter } from '@/helpers/useCurrencyFormatter'
-import { ref, watch } from 'vue'
+import type { CryptoCurrency } from '@/interfaces/crypto-currency.interface'
+import type { FiltersForm } from '@/interfaces/filters-form.interface'
+import { useForm } from 'vee-validate'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { debounce } from 'lodash-es'
 
-const page = ref(1)
-const name = ref('')
-const signal = ref('')
-const trend = ref('')
+// composables self vue 3
+const route = useRoute()
+const router = useRouter()
 
-const { cryptosCurrency, isLoading, refetch } = useCryptoCurrencies(page, name, trend, signal)
+// variables
+const page = ref(Number(route.query.page) || 1)
+const f = ref(
+  JSON.stringify(
+    route.query.filter || {
+      name: '',
+      signal: '',
+      trend: '',
+    },
+  ).replace(/"/g, '\\"'),
+)
+const isOpen = ref('')
+
+// composables
+const { values, defineField } = useForm<FiltersForm>({
+  initialValues: {
+    name: '',
+    signal: '',
+    trend: '',
+  },
+})
+
+const nameDebounced = ref(values.name)
+const filters = computed(() => ({
+  ...values,
+  name: nameDebounced.value,
+}))
+
 const { formatCurrency } = useCurrencyFormatter()
+const { cryptosCurrency } = useCryptoCurrencies(page, filters)
+
+const [name, nameAttrs] = defineField('name')
+const [signal, signalAttrs] = defineField('signal')
+const [trend, trendAttrs] = defineField('trend')
+
+const modalOpen = (crypto: CryptoCurrency) => {
+  isOpen.value = crypto.id
+}
 
 const backPage = () => {
   if (page.value === 1) return
   page.value--
+  router.push({ query: { page: page.value, filter: f.value.replace(/"/g, '\\"') } })
 }
 
 const nextPage = () => {
   page.value++
+  router.push({ query: { page: page.value, filter: f.value.replace(/"/g, '\\"') } })
 }
 
-watch(page, () => {
-  refetch()
-})
+// watchers
+watch(
+  () => route.query.page,
+  (newPage) => {
+    page.value = Number(newPage || 1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  },
+)
 
-watch(name, () => {
-  refetch()
-})
+watch(
+  () => route.query.filter,
+  (newFilter) => {
+    f.value = JSON.stringify(newFilter).replace(/"/g, '\\"')
+    // window.scrollTo({ top: 0, behavior: 'smooth' })
+  },
+)
 
-watch(trend, () => {
-  refetch()
-})
-
-watch(signal, () => {
-  refetch()
-})
+watch(
+  () => values.name,
+  debounce((val) => {
+    nameDebounced.value = val
+  }, 400),
+  { flush: 'post' },
+)
 </script>

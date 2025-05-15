@@ -1,35 +1,40 @@
 <template>
-  <dialog ref="dialogRef" class="modal" v-if="visible" @close="emit('update:visible', false)">
+  <dialog class="modal" :open="open">
     <div class="modal-box">
-      <h3 class="text-lg font-bold">Hello!</h3>
-      <p class="py-4">This is a modal controlled by v-model.</p>
+      <div class="border-b border-blue-500">
+        <!-- Header -->
+        <!-- <slot name="header" /> -->
+        <p>{{ crypto.name }}</p>
+      </div>
+
+      <div class="my-5">
+        <!-- <slot name="body" /> -->
+        <p>body</p>
+      </div>
+
+      <div class="border-t border-t-blue-500 pt-2">
+        <button class="btn btn-primary" @click="$emit('close')">Cerrar</button>
+      </div>
     </div>
-    <form method="dialog" class="modal-backdrop" @submit="emit('update:visible', false)">
-      <button>close</button>
-    </form>
   </dialog>
+
+  <div
+    v-if="open"
+    class="modal-backdrop fixed top-0 left-0 z-10 bg-black opacity-40 w-screen h-screen"
+  ></div>
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import type { CryptoCurrency } from '@/interfaces/crypto-currency.interface'
 
-const props = defineProps<{
-  visible: boolean
+interface Props {
+  open: boolean
+  crypto: CryptoCurrency
+}
+
+defineProps<Props>()
+
+defineEmits<{
+  close: [void]
 }>()
-const emit = defineEmits<{
-  (e: 'update:visible', value: boolean): void
-}>()
-
-const dialogRef = ref<HTMLDialogElement | null>(null)
-
-watch(
-  () => props.visible,
-  (visible) => {
-    if (visible) {
-      dialogRef.value?.showModal()
-    } else {
-      dialogRef.value?.close()
-    }
-  },
-)
 </script>

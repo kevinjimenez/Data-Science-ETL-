@@ -61,6 +61,6 @@ export class SeedService {
   @Cron('0 * * * * *')
   async handleCron() {
     console.log('Running seed');
-    await this.executeSeed();
+    // await this.executeSeed();
   }
 }

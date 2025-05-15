@@ -1,19 +1,15 @@
 import { api } from '@/api/api'
 import type { CryptoCurrency } from '@/interfaces/crypto-currency.interface'
+import type { FiltersForm } from '@/interfaces/filters-form.interface'
 
-export const getCryptoCurrencies = async (
-  page: number,
-  name?: string,
-  trend?: string,
-  signal?: string,
-) => {
+export const getCryptoCurrenciesAction = async (page: number, filters?: FiltersForm) => {
   try {
     const response = await api.get<CryptoCurrency[]>(`/crypto-currency`, {
       params: {
         page,
-        name,
-        trend,
-        signal,
+        name: filters?.name,
+        trend: filters?.trend,
+        signal: filters?.signal,
       },
     })
     return response.data
