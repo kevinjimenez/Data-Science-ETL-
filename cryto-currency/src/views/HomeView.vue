@@ -194,23 +194,14 @@ const router = useRouter()
 
 // variables
 const page = ref(Number(route.query.page) || 1)
-const f = ref(
-  JSON.stringify(
-    route.query.filter || {
-      name: '',
-      signal: '',
-      trend: '',
-    },
-  ).replace(/"/g, '\\"'),
-)
 const isOpen = ref('')
 
 // composables
 const { values, defineField } = useForm<FiltersForm>({
   initialValues: {
-    name: '',
-    signal: '',
-    trend: '',
+    name: route.query.name?.toString() || '',
+    signal: route.query.signal?.toString() || '',
+    trend: route.query.trend?.toString() || '',
   },
 })
 
@@ -234,12 +225,21 @@ const modalOpen = (crypto: CryptoCurrency) => {
 const backPage = () => {
   if (page.value === 1) return
   page.value--
-  router.push({ query: { page: page.value, filter: f.value.replace(/"/g, '\\"') } })
+  router.push({
+    query: {
+      page: page.value,
+      name: values.name,
+      signal: values.signal,
+      trend: values.trend,
+    },
+  })
 }
 
 const nextPage = () => {
   page.value++
-  router.push({ query: { page: page.value, filter: f.value.replace(/"/g, '\\"') } })
+  router.push({
+    query: { page: page.value, name: values.name, signal: values.signal, trend: values.trend },
+  })
 }
 
 // watchers
@@ -251,13 +251,16 @@ watch(
   },
 )
 
-watch(
-  () => route.query.filter,
-  (newFilter) => {
-    f.value = JSON.stringify(newFilter).replace(/"/g, '\\"')
-    // window.scrollTo({ top: 0, behavior: 'smooth' })
-  },
-)
+watch(values, (newValues) => {
+  router.push({
+    query: {
+      page: page.value,
+      name: newValues.name,
+      signal: newValues.signal,
+      trend: newValues.trend,
+    },
+  })
+})
 
 watch(
   () => values.name,
