@@ -11,6 +11,7 @@ export const useCryptoCurrencies = (page: Ref<number>, filters: Ref<FiltersForm>
   const { isPending, isError, data, error, refetch } = useQuery({
     queryKey: ['crypto-currency', { page, filters }],
     queryFn: () => getCryptoCurrenciesAction(page.value, filters.value),
+    refetchInterval: 10000,
   })
 
   watchEffect(() => {

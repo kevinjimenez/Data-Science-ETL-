@@ -1,9 +1,14 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { CryptoCurrencyService } from './crypto-currency.service';
 
 @Controller('crypto-currency')
 export class CryptoCurrencyController {
   constructor(private readonly cryptoCurrencyService: CryptoCurrencyService) {}
+
+  @Get(':tag')
+  getHistoryCryptoCurrencyByTag(@Param('tag') tag: string) {
+    return this.cryptoCurrencyService.getHistoryCryptoCurrencyByTag(tag);
+  }
 
   @Get()
   findAll(

@@ -27,6 +27,10 @@ export class CryptoCurrencyService {
     return this.cryptoCurrencyRepository.getCryptoCurrencies(page, filters);
   }
 
+  public getHistoryCryptoCurrencyByTag(tag: string) {
+    return this.cryptoCurrencyRepository.getHistoryCryptoCurrencyByTag(tag);
+  }
+
   public moveToHistory() {
     return this.cryptoCurrencyRepository.moveToHistory();
   }

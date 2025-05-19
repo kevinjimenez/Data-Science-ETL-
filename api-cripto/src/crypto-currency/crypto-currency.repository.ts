@@ -65,6 +65,15 @@ export class CryptoCurrencyRepository {
     });
   }
 
+  public getHistoryCryptoCurrencyByTag(tag: string): Promise<CryptoCurrency[]> {
+    return this.databaseService.cryptoCurrency.findMany({
+      where: {
+        tag,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   public async deleteAll() {
     await this.databaseService.cryptoCurrency.deleteMany({});
     return 'delete all';

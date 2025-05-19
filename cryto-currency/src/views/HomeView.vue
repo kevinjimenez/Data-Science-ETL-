@@ -194,8 +194,8 @@ const { formatCurrency } = useCurrencyFormatter()
 const { buildQueryParams } = useQueryParams()
 
 // variables not depend on composables
-const page = ref(Number(route.query.page) || 1)
 const isOpen = ref('')
+const page = ref(Number(route.query.page) || 1)
 const initialValuesFilters = ref({
   name: route.query.name?.toString() ?? '',
   signal: route.query.signal?.toString() || '',
